@@ -17,6 +17,7 @@ interface SpinFormProps {
 }
 
 const initialForm: SpinFormInput = {
+  fullName: "",
   phone: "",
   email: "",
   customerType: "",
@@ -43,6 +44,7 @@ export default function SpinForm({ onSuccess, onAlreadyParticipated, onExhausted
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setTouched({
+      fullName: true,
       phone: true,
       email: true,
       customerType: true,
@@ -100,6 +102,22 @@ export default function SpinForm({ onSuccess, onAlreadyParticipated, onExhausted
       </div>
 
       <div className="space-y-5">
+        <Field label="Full Name" htmlFor="fullName" error={fieldError("fullName")} required>
+          <input
+            id="fullName"
+            name="fullName"
+            type="text"
+            autoComplete="name"
+            placeholder="Jane Doe"
+            value={form.fullName}
+            onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+            onBlur={() => markTouched("fullName")}
+            aria-invalid={Boolean(fieldError("fullName"))}
+            aria-describedby={fieldError("fullName") ? "fullName-error" : undefined}
+            className={inputClass(Boolean(fieldError("fullName")))}
+          />
+        </Field>
+
         <Field label="Phone Number" htmlFor="phone" error={fieldError("phone")} required>
           <input
             id="phone"

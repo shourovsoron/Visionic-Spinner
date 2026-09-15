@@ -7,6 +7,7 @@ import BulkDeleteModal from "./BulkDeleteModal";
 
 interface ParticipantRow {
   _id: string;
+  fullName: string;
   phone: string;
   email: string;
   customerType: "individual" | "business";
@@ -211,7 +212,7 @@ export default function ParticipantsTable() {
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-neutral-200 dark:border-ink-700/60 bg-white dark:bg-ink-900/60 p-4">
         <div className="flex-1 min-w-[200px]">
           <label htmlFor="search" className="mb-1 block text-xs font-medium text-neutral-500 dark:text-ink-400">
-            Search (email or phone)
+            Search (name, email, or phone)
           </label>
           <input
             id="search"
@@ -295,7 +296,7 @@ export default function ParticipantsTable() {
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       <div className="overflow-x-auto rounded-xl border border-neutral-200 dark:border-ink-700/60 bg-white dark:bg-ink-900/60">
-        <table className="w-full min-w-[960px] text-left text-sm">
+        <table className="w-full min-w-[1080px] text-left text-sm">
           <thead>
             <tr className="border-b border-neutral-200 dark:border-ink-700/60 text-xs uppercase tracking-wide text-neutral-500 dark:text-ink-400">
               <th className="w-10 px-4 py-3">
@@ -307,6 +308,7 @@ export default function ParticipantsTable() {
                   className="h-4 w-4 rounded border-neutral-400 dark:border-ink-500 accent-gold-400"
                 />
               </th>
+              <SortableHeader field="fullName" label="Full Name" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
               <SortableHeader field="phone" label="Phone" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
               <SortableHeader field="email" label="Email" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
               <SortableHeader
@@ -342,6 +344,7 @@ export default function ParticipantsTable() {
                     className="h-4 w-4 rounded border-neutral-400 dark:border-ink-500 accent-gold-400"
                   />
                 </td>
+                <td className="px-4 py-3">{row.fullName}</td>
                 <td className="px-4 py-3">{row.phone}</td>
                 <td className="px-4 py-3">{row.email}</td>
                 <td className="px-4 py-3 capitalize">{row.customerType}</td>
@@ -386,7 +389,7 @@ export default function ParticipantsTable() {
             ))}
             {data && items.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-4 py-8 text-center text-neutral-400 dark:text-ink-500">
+                <td colSpan={11} className="px-4 py-8 text-center text-neutral-400 dark:text-ink-500">
                   No participants match these filters.
                 </td>
               </tr>

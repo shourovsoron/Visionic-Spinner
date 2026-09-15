@@ -2,6 +2,7 @@ export type CustomerType = "individual" | "business";
 export type YesNo = "yes" | "no";
 
 export interface SpinFormInput {
+  fullName: string;
   phone: string;
   email: string;
   customerType: string;
@@ -10,6 +11,7 @@ export interface SpinFormInput {
 }
 
 export interface ValidatedSpinInput {
+  fullName: string;
   phone: string;
   email: string;
   customerType: CustomerType;
@@ -18,6 +20,7 @@ export interface ValidatedSpinInput {
 }
 
 export interface FieldErrors {
+  fullName?: string;
   phone?: string;
   email?: string;
   customerType?: string;
@@ -66,6 +69,15 @@ export function validateSpinInput(input: SpinFormInput): {
 } {
   const errors: FieldErrors = {};
 
+  const fullName = (input.fullName ?? "").trim();
+  if (!fullName) {
+    errors.fullName = "Full name is required.";
+  } else if (fullName.length < 2) {
+    errors.fullName = "Enter your full name.";
+  } else if (fullName.length > 100) {
+    errors.fullName = "Full name is too long.";
+  }
+
   const phone = (input.phone ?? "").trim();
   if (!phone) {
     errors.phone = "Phone number is required.";
@@ -102,6 +114,7 @@ export function validateSpinInput(input: SpinFormInput): {
     errors,
     data: valid
       ? {
+          fullName,
           phone: normalizePhone(phone),
           email: normalizeEmail(email),
           customerType: customerType as CustomerType,

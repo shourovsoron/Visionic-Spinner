@@ -22,10 +22,11 @@ export async function GET(req: NextRequest) {
 
     const participants = await Participant.find({})
       .sort({ createdAt: -1 })
-      .select("phone email customerType website lookingForDesign prize couponCode createdAt")
+      .select("fullName phone email customerType website lookingForDesign prize couponCode createdAt")
       .lean();
 
     const header = [
+      "Full Name",
       "Phone",
       "Email",
       "Customer Type",
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest) {
     ];
 
     const rows = participants.map((p) => [
+      p.fullName,
       p.phone,
       p.email,
       p.customerType,

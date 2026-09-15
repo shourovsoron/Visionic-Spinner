@@ -2,6 +2,7 @@ import mongoose, { Schema, type Document, type Model } from "mongoose";
 import { PRIZE_TYPES, type PrizeType } from "../prizeTypes";
 
 export interface ParticipantDocument extends Document {
+  fullName: string;
   phone: string;
   email: string;
   customerType: "individual" | "business";
@@ -15,6 +16,7 @@ export interface ParticipantDocument extends Document {
 
 const ParticipantSchema = new Schema<ParticipantDocument>(
   {
+    fullName: { type: String, required: true, trim: true },
     phone: { type: String, required: true, trim: true },
     email: { type: String, required: true, trim: true, lowercase: true },
     customerType: { type: String, required: true, enum: ["individual", "business"] },

@@ -120,6 +120,7 @@ export async function reserveSpin(input: ValidatedSpinInput): Promise<SpinOutcom
         await Participant.create(
           [
             {
+              fullName: input.fullName,
               phone: input.phone,
               email: input.email,
               customerType: input.customerType,

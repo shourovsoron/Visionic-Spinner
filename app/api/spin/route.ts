@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
 
   const input = body as Partial<SpinFormInput>;
   const { valid, errors, data } = validateSpinInput({
+    fullName: input.fullName ?? "",
     phone: input.phone ?? "",
     email: input.email ?? "",
     customerType: input.customerType ?? "",

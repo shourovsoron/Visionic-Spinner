@@ -4,7 +4,7 @@ import { Participant } from "@/lib/models/Participant";
 import { isAuthenticatedRequest } from "@/lib/adminAuth";
 import { isPrizeType } from "@/lib/prizeTypes";
 
-const SORTABLE_FIELDS = new Set(["createdAt", "email", "phone", "prize", "customerType"]);
+const SORTABLE_FIELDS = new Set(["createdAt", "fullName", "email", "phone", "prize", "customerType"]);
 const MAX_PAGE_SIZE = 100;
 
 export async function GET(req: NextRequest) {
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     if (search) {
       const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const regex = new RegExp(escaped, "i");
-      query.$or = [{ email: regex }, { phone: regex }];
+      query.$or = [{ email: regex }, { phone: regex }, { fullName: regex }];
     }
 
     if (prizeFilter && isPrizeType(prizeFilter)) {
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
         .sort({ [sortField]: sortDir })
         .skip((page - 1) * pageSize)
         .limit(pageSize)
-        .select("phone email customerType website lookingForDesign prize couponCode createdAt")
+        .select("fullName phone email customerType website lookingForDesign prize couponCode createdAt")
         .lean(),
       Participant.countDocuments(query),
     ]);
