@@ -126,6 +126,7 @@ export async function reserveSpin(input: ValidatedSpinInput): Promise<SpinOutcom
               customerType: input.customerType,
               website: input.website,
               lookingForDesign: input.lookingForDesign,
+              referralPartnership: input.referralPartnership,
               prize,
               couponCode,
             },

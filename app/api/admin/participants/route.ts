@@ -49,7 +49,9 @@ export async function GET(req: NextRequest) {
         .sort({ [sortField]: sortDir })
         .skip((page - 1) * pageSize)
         .limit(pageSize)
-        .select("fullName phone email customerType website lookingForDesign prize couponCode createdAt")
+        .select(
+          "fullName phone email customerType website lookingForDesign referralPartnership prize couponCode createdAt"
+        )
         .lean(),
       Participant.countDocuments(query),
     ]);

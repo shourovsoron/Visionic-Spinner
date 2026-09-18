@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PRIZE_LABELS, type PrizeType } from "@/lib/prizeTypes";
+import { type PrizeType } from "@/lib/prizeTypes";
 import Spinner from "@/components/ui/Spinner";
 
 interface InventoryRow {
   prizeType: PrizeType;
   totalQuantity: number;
   remainingQuantity: number;
+  label: string;
 }
 
 interface StatsResponse {
@@ -65,7 +66,7 @@ export default function StatsOverview() {
         {stats.inventory.map((row) => (
           <StatCard
             key={row.prizeType}
-            label={PRIZE_LABELS[row.prizeType]}
+            label={row.label}
             value={`${row.remainingQuantity} / ${row.totalQuantity}`}
             sublabel="Remaining"
           />

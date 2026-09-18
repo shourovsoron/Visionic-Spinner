@@ -13,8 +13,8 @@ type ViewState =
   | { step: "form" }
   | { step: "already_participated" }
   | { step: "exhausted" }
-  | { step: "spinning"; prize: PrizeType; couponCode: string | null }
-  | { step: "result"; prize: PrizeType; couponCode: string | null };
+  | { step: "spinning"; prize: PrizeType; prizeLabel: string; couponCode: string | null }
+  | { step: "result"; prize: PrizeType; prizeLabel: string; couponCode: string | null };
 
 export default function SpinPage() {
   const [view, setView] = useState<ViewState>({ step: "checking" });
@@ -29,7 +29,12 @@ export default function SpinPage() {
         if (cancelled) return;
 
         if (data.participated && isPrizeType(data.prize)) {
-          setView({ step: "result", prize: data.prize, couponCode: data.couponCode ?? null });
+          setView({
+            step: "result",
+            prize: data.prize,
+            prizeLabel: data.prizeLabel ?? data.prize,
+            couponCode: data.couponCode ?? null,
+          });
         } else if (data.exhausted) {
           setView({ step: "exhausted" });
         } else {
@@ -47,7 +52,12 @@ export default function SpinPage() {
 
   function handleSuccess(payload: SpinSuccessPayload) {
     if (!isPrizeType(payload.prize)) return;
-    setView({ step: "spinning", prize: payload.prize, couponCode: payload.couponCode });
+    setView({
+      step: "spinning",
+      prize: payload.prize,
+      prizeLabel: payload.prizeLabel,
+      couponCode: payload.couponCode,
+    });
   }
 
   return (
@@ -103,17 +113,23 @@ export default function SpinPage() {
         {view.step === "spinning" && (
           <PrizeWheel
             targetPrize={view.prize}
+            targetPrizeLabel={view.prizeLabel}
             onSettled={() =>
               setView((current) =>
                 current.step === "spinning"
-                  ? { step: "result", prize: current.prize, couponCode: current.couponCode }
+                  ? {
+                      step: "result",
+                      prize: current.prize,
+                      prizeLabel: current.prizeLabel,
+                      couponCode: current.couponCode,
+                    }
                   : current
               )
             }
           />
         )}
 
-        {view.step === "result" && <SpinResult prize={view.prize} couponCode={view.couponCode} />}
+        {view.step === "result" && <SpinResult prizeLabel={view.prizeLabel} couponCode={view.couponCode} />}
       </div>
     </main>
   );

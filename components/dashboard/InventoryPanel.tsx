@@ -1,18 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PRIZE_LABELS, PRIZE_TYPES, TOTAL_CAMPAIGN_SPINS, type PrizeType } from "@/lib/prizeTypes";
+import { PRIZE_TYPES, TOTAL_CAMPAIGN_SPINS, type PrizeType } from "@/lib/prizeTypes";
 import Spinner from "@/components/ui/Spinner";
 
 interface InventoryRow {
   prizeType: PrizeType;
   totalQuantity: number;
   remainingQuantity: number;
+  label: string;
 }
 
 export default function InventoryPanel() {
   const [inventory, setInventory] = useState<InventoryRow[] | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [labelDrafts, setLabelDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -34,6 +36,9 @@ export default function InventoryPanel() {
       setDrafts(
         Object.fromEntries((data.inventory as InventoryRow[]).map((r) => [r.prizeType, String(r.totalQuantity)]))
       );
+      setLabelDrafts(
+        Object.fromEntries((data.inventory as InventoryRow[]).map((r) => [r.prizeType, r.label]))
+      );
     } catch {
       setError("Failed to load inventory.");
     }
@@ -44,7 +49,8 @@ export default function InventoryPanel() {
   }, []);
 
   const draftTotal = PRIZE_TYPES.reduce((sum, type) => sum + (Number(drafts[type]) || 0), 0);
-  const draftValid = draftTotal === TOTAL_CAMPAIGN_SPINS;
+  const draftLabelsValid = PRIZE_TYPES.every((type) => (labelDrafts[type] ?? "").trim().length > 0);
+  const draftValid = draftTotal === TOTAL_CAMPAIGN_SPINS && draftLabelsValid;
 
   async function handleSave() {
     if (!draftValid || saving) return;
@@ -60,6 +66,7 @@ export default function InventoryPanel() {
           updates: PRIZE_TYPES.map((prizeType) => ({
             prizeType,
             totalQuantity: Number(drafts[prizeType]) || 0,
+            label: (labelDrafts[prizeType] ?? "").trim(),
           })),
         }),
       });
@@ -101,37 +108,56 @@ export default function InventoryPanel() {
         <p className="text-sm text-neutral-600 dark:text-ink-300">
           Total inventory across all prize types must always equal exactly{" "}
           <span className="font-semibold text-gold-600 dark:text-gold-400">{TOTAL_CAMPAIGN_SPINS}</span>. A total can never be
-          set below the number of that prize already awarded.
+          set below the number of that prize already awarded. Prize names shown to participants can be edited here too.
         </p>
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {inventory.map((row) => (
-            <div key={row.prizeType} className="rounded-lg border border-neutral-200 dark:border-ink-700/60 bg-neutral-100 dark:bg-ink-800/50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-ink-400">
-                {PRIZE_LABELS[row.prizeType]}
-              </p>
-              <p className="mt-1 text-xs text-neutral-400 dark:text-ink-500">Remaining: {row.remainingQuantity}</p>
-              <label htmlFor={`total-${row.prizeType}`} className="mt-3 block text-xs text-neutral-500 dark:text-ink-400">
-                Total
-              </label>
-              <input
-                id={`total-${row.prizeType}`}
-                type="number"
-                min={0}
-                value={drafts[row.prizeType] ?? ""}
-                onChange={(e) =>
-                  setDrafts((d) => ({ ...d, [row.prizeType]: e.target.value }))
-                }
-                className="mt-1 w-full rounded-lg border border-neutral-300 dark:border-ink-600 bg-white dark:bg-ink-800/80 px-3 py-2 text-sm text-neutral-900 dark:text-ink-100 outline-none focus:border-gold-400/70"
-              />
-            </div>
-          ))}
+          {inventory.map((row) => {
+            const labelEmpty = !(labelDrafts[row.prizeType] ?? "").trim();
+            return (
+              <div key={row.prizeType} className="rounded-lg border border-neutral-200 dark:border-ink-700/60 bg-neutral-100 dark:bg-ink-800/50 p-4">
+                <label htmlFor={`label-${row.prizeType}`} className="block text-xs text-neutral-500 dark:text-ink-400">
+                  Prize Name
+                </label>
+                <input
+                  id={`label-${row.prizeType}`}
+                  type="text"
+                  maxLength={60}
+                  value={labelDrafts[row.prizeType] ?? ""}
+                  onChange={(e) =>
+                    setLabelDrafts((d) => ({ ...d, [row.prizeType]: e.target.value }))
+                  }
+                  aria-invalid={labelEmpty}
+                  className={`mt-1 w-full rounded-lg border bg-white dark:bg-ink-800/80 px-3 py-2 text-sm font-medium text-neutral-900 dark:text-ink-100 outline-none ${
+                    labelEmpty ? "border-red-500/60 focus:border-red-500" : "border-neutral-300 dark:border-ink-600 focus:border-gold-400/70"
+                  }`}
+                />
+                <p className="mt-2 text-xs text-neutral-400 dark:text-ink-500">Remaining: {row.remainingQuantity}</p>
+                <label htmlFor={`total-${row.prizeType}`} className="mt-3 block text-xs text-neutral-500 dark:text-ink-400">
+                  Total
+                </label>
+                <input
+                  id={`total-${row.prizeType}`}
+                  type="number"
+                  min={0}
+                  value={drafts[row.prizeType] ?? ""}
+                  onChange={(e) =>
+                    setDrafts((d) => ({ ...d, [row.prizeType]: e.target.value }))
+                  }
+                  className="mt-1 w-full rounded-lg border border-neutral-300 dark:border-ink-600 bg-white dark:bg-ink-800/80 px-3 py-2 text-sm text-neutral-900 dark:text-ink-100 outline-none focus:border-gold-400/70"
+                />
+              </div>
+            );
+          })}
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <p className={`text-sm ${draftValid ? "text-neutral-500 dark:text-ink-400" : "text-red-600 dark:text-red-400"}`}>
+          <p className={`text-sm ${draftTotal === TOTAL_CAMPAIGN_SPINS ? "text-neutral-500 dark:text-ink-400" : "text-red-600 dark:text-red-400"}`}>
             Sum: {draftTotal} / {TOTAL_CAMPAIGN_SPINS}
           </p>
+          {!draftLabelsValid && (
+            <p className="text-sm text-red-600 dark:text-red-400">Prize names cannot be empty.</p>
+          )}
           <button
             type="button"
             onClick={handleSave}

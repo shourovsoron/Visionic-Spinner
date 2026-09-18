@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { PRIZE_LABELS, PRIZE_TYPES, type PrizeType } from "@/lib/prizeTypes";
+import { PRIZE_TYPES, type PrizeType } from "@/lib/prizeTypes";
 import Spinner from "@/components/ui/Spinner";
 import BulkDeleteModal from "./BulkDeleteModal";
 
@@ -13,6 +13,7 @@ interface ParticipantRow {
   customerType: "individual" | "business";
   website?: string;
   lookingForDesign: "yes" | "no";
+  referralPartnership: "yes" | "no";
   prize: PrizeType;
   couponCode?: string;
   createdAt: string;
@@ -34,15 +35,21 @@ const SORT_OPTIONS = [
   { value: "customerType", label: "Customer Type" },
 ];
 
-function summarizeRestored(restoredByPrize: Partial<Record<PrizeType, number>>): string {
+function summarizeRestored(
+  restoredByPrize: Partial<Record<PrizeType, number>>,
+  labels: Record<PrizeType, string>
+): string {
   const parts = PRIZE_TYPES.filter((p) => restoredByPrize[p]).map(
-    (p) => `${PRIZE_LABELS[p]} +${restoredByPrize[p]}`
+    (p) => `${labels[p]} +${restoredByPrize[p]}`
   );
   return parts.length ? ` Restored to inventory: ${parts.join(", ")}.` : "";
 }
 
+const FALLBACK_LABELS = Object.fromEntries(PRIZE_TYPES.map((p) => [p, p])) as Record<PrizeType, string>;
+
 export default function ParticipantsTable() {
   const [data, setData] = useState<ParticipantsResponse | null>(null);
+  const [labels, setLabels] = useState<Record<PrizeType, string>>(FALLBACK_LABELS);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [prizeFilter, setPrizeFilter] = useState("");
@@ -96,6 +103,27 @@ export default function ParticipantsTable() {
       cancelled = true;
     };
   }, [loadParticipants]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/inventory", { cache: "no-store" });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (cancelled) return;
+        const map = Object.fromEntries(
+          (json.inventory as { prizeType: PrizeType; label: string }[]).map((r) => [r.prizeType, r.label])
+        ) as Record<PrizeType, string>;
+        setLabels(map);
+      } catch {
+        // Keep fallback labels.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function toggleSort(field: string) {
     if (sortField === field) {
@@ -166,7 +194,7 @@ export default function ParticipantsTable() {
       });
       setFeedback({
         type: "success",
-        message: `Participant deleted.${summarizeRestored(json.restoredByPrize)}`,
+        message: `Participant deleted.${summarizeRestored(json.restoredByPrize, labels)}`,
       });
       await loadParticipants();
     } catch {
@@ -195,7 +223,8 @@ export default function ParticipantsTable() {
       setFeedback({
         type: "success",
         message: `Deleted ${json.deletedCount} participant${json.deletedCount === 1 ? "" : "s"}.${summarizeRestored(
-          json.restoredByPrize
+          json.restoredByPrize,
+          labels
         )}`,
       });
       await loadParticipants();
@@ -236,7 +265,7 @@ export default function ParticipantsTable() {
             <option value="">All prizes</option>
             {PRIZE_TYPES.map((p) => (
               <option key={p} value={p}>
-                {PRIZE_LABELS[p]}
+                {labels[p]}
               </option>
             ))}
           </select>
@@ -320,6 +349,7 @@ export default function ParticipantsTable() {
               />
               <th className="px-4 py-3 font-medium">Website</th>
               <th className="px-4 py-3 font-medium">Design Services</th>
+              <th className="px-4 py-3 font-medium">Referral/Partnership</th>
               <SortableHeader field="prize" label="Prize" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
               <th className="px-4 py-3 font-medium">Coupon Code</th>
               <SortableHeader
@@ -358,7 +388,8 @@ export default function ParticipantsTable() {
                   )}
                 </td>
                 <td className="px-4 py-3 capitalize">{row.lookingForDesign}</td>
-                <td className="px-4 py-3">{PRIZE_LABELS[row.prize]}</td>
+                <td className="px-4 py-3 capitalize">{row.referralPartnership}</td>
+                <td className="px-4 py-3">{labels[row.prize]}</td>
                 <td className="px-4 py-3">{row.couponCode ?? <span className="text-neutral-400 dark:text-ink-500">—</span>}</td>
                 <td className="px-4 py-3 text-neutral-500 dark:text-ink-400">{new Date(row.createdAt).toLocaleString()}</td>
                 <td className="px-4 py-3">
@@ -389,7 +420,7 @@ export default function ParticipantsTable() {
             ))}
             {data && items.length === 0 && (
               <tr>
-                <td colSpan={11} className="px-4 py-8 text-center text-neutral-400 dark:text-ink-500">
+                <td colSpan={12} className="px-4 py-8 text-center text-neutral-400 dark:text-ink-500">
                   No participants match these filters.
                 </td>
               </tr>

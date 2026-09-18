@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Participant } from "@/lib/models/Participant";
 import { isAuthenticatedRequest } from "@/lib/adminAuth";
-import { PRIZE_LABELS, isPrizeType } from "@/lib/prizeTypes";
+import { isPrizeType } from "@/lib/prizeTypes";
+import { getPrizeLabels } from "@/lib/prizeLabels";
 
 function csvEscape(value: unknown): string {
   const str = value === null || value === undefined ? "" : String(value);
@@ -20,10 +21,15 @@ export async function GET(req: NextRequest) {
   try {
     await connectToDatabase();
 
-    const participants = await Participant.find({})
-      .sort({ createdAt: -1 })
-      .select("fullName phone email customerType website lookingForDesign prize couponCode createdAt")
-      .lean();
+    const [participants, labels] = await Promise.all([
+      Participant.find({})
+        .sort({ createdAt: -1 })
+        .select(
+          "fullName phone email customerType website lookingForDesign referralPartnership prize couponCode createdAt"
+        )
+        .lean(),
+      getPrizeLabels(),
+    ]);
 
     const header = [
       "Full Name",
@@ -32,6 +38,7 @@ export async function GET(req: NextRequest) {
       "Customer Type",
       "Website",
       "Looking for Design Services",
+      "Interested in Referral/Partnership Programs",
       "Prize",
       "Coupon Code",
       "Created At",
@@ -44,7 +51,8 @@ export async function GET(req: NextRequest) {
       p.customerType,
       p.website ?? "",
       p.lookingForDesign,
-      isPrizeType(p.prize) ? PRIZE_LABELS[p.prize] : p.prize,
+      p.referralPartnership,
+      isPrizeType(p.prize) ? labels[p.prize] : p.prize,
       p.couponCode ?? "",
       new Date(p.createdAt).toISOString(),
     ]);

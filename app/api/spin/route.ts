@@ -4,7 +4,8 @@ import { Participant } from "@/lib/models/Participant";
 import { PrizeInventory } from "@/lib/models/PrizeInventory";
 import { validateSpinInput, type SpinFormInput } from "@/lib/validation";
 import { reserveSpin } from "@/lib/prizeEngine";
-import { PRIZE_LABELS, isPrizeType } from "@/lib/prizeTypes";
+import { isPrizeType } from "@/lib/prizeTypes";
+import { getPrizeLabels } from "@/lib/prizeLabels";
 import { createParticipantToken, readParticipantId, PARTICIPANT_COOKIE } from "@/lib/participantSession";
 
 export const dynamic = "force-dynamic";
@@ -20,10 +21,10 @@ async function isCampaignExhausted(): Promise<boolean> {
 export async function GET(req: NextRequest) {
   try {
     await connectToDatabase();
-    const exhausted = await isCampaignExhausted();
+    const [exhausted, labels] = await Promise.all([isCampaignExhausted(), getPrizeLabels()]);
     const participantId = readParticipantId(req);
     if (!participantId) {
-      return NextResponse.json({ participated: false, exhausted });
+      return NextResponse.json({ participated: false, exhausted, labels });
     }
 
     const participant = await Participant.findById(participantId).select(
@@ -31,15 +32,16 @@ export async function GET(req: NextRequest) {
     );
 
     if (!participant || !isPrizeType(participant.prize)) {
-      return NextResponse.json({ participated: false, exhausted });
+      return NextResponse.json({ participated: false, exhausted, labels });
     }
 
     return NextResponse.json({
       participated: true,
       exhausted,
       prize: participant.prize,
-      prizeLabel: PRIZE_LABELS[participant.prize],
+      prizeLabel: labels[participant.prize],
       couponCode: participant.couponCode ?? null,
+      labels,
     });
   } catch (err) {
     console.error("GET /api/spin failed", err);
@@ -73,6 +75,7 @@ export async function POST(req: NextRequest) {
     customerType: input.customerType ?? "",
     website: input.website ?? "",
     lookingForDesign: input.lookingForDesign ?? "",
+    referralPartnership: input.referralPartnership ?? "",
   });
 
   if (!valid || !data) {
@@ -100,12 +103,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const participant = await Participant.findOne({ email: data.email }).select("_id");
+    const [participant, labels] = await Promise.all([
+      Participant.findOne({ email: data.email }).select("_id"),
+      getPrizeLabels(),
+    ]);
 
     const response = NextResponse.json({
       success: true,
       prize: outcome.prize,
-      prizeLabel: PRIZE_LABELS[outcome.prize],
+      prizeLabel: labels[outcome.prize],
       couponCode: outcome.couponCode ?? null,
     });
 

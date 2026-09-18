@@ -1,21 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { PRIZE_LABELS, type PrizeType } from "@/lib/prizeTypes";
 
 interface SpinResultProps {
-  prize: PrizeType;
+  prizeLabel: string;
   couponCode: string | null;
 }
 
-const PRIZE_HEADLINES: Record<PrizeType, string> = {
-  flight_ticket: "You Won a Flight Ticket!",
-  tshirt: "You Won a T-Shirt!",
-  coupon_20: "You Won 20% OFF",
-  coupon_15: "You Won 15% OFF",
-};
-
-export default function SpinResult({ prize, couponCode }: SpinResultProps) {
+export default function SpinResult({ prizeLabel, couponCode }: SpinResultProps) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -43,7 +35,7 @@ export default function SpinResult({ prize, couponCode }: SpinResultProps) {
 
       <p className="text-sm font-medium uppercase tracking-widest text-gold-600 dark:text-gold-400">Congratulations!</p>
       <h2 className="mt-2 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-ink-100 sm:text-3xl">
-        {PRIZE_HEADLINES[prize]}
+        You Won {prizeLabel}!
       </h2>
 
       {couponCode && (

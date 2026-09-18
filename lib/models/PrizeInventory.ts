@@ -5,12 +5,14 @@ export interface PrizeInventoryDocument extends Document {
   prizeType: PrizeType;
   totalQuantity: number;
   remainingQuantity: number;
+  label?: string;
 }
 
 const PrizeInventorySchema = new Schema<PrizeInventoryDocument>({
   prizeType: { type: String, required: true, enum: PRIZE_TYPES, unique: true },
   totalQuantity: { type: Number, required: true, min: 0 },
   remainingQuantity: { type: Number, required: true, min: 0 },
+  label: { type: String, trim: true },
 });
 
 export const PrizeInventory: Model<PrizeInventoryDocument> =

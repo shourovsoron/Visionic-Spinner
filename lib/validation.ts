@@ -8,6 +8,7 @@ export interface SpinFormInput {
   customerType: string;
   website: string;
   lookingForDesign: string;
+  referralPartnership: string;
 }
 
 export interface ValidatedSpinInput {
@@ -17,6 +18,7 @@ export interface ValidatedSpinInput {
   customerType: CustomerType;
   website?: string;
   lookingForDesign: YesNo;
+  referralPartnership: YesNo;
 }
 
 export interface FieldErrors {
@@ -26,6 +28,7 @@ export interface FieldErrors {
   customerType?: string;
   website?: string;
   lookingForDesign?: string;
+  referralPartnership?: string;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -107,6 +110,11 @@ export function validateSpinInput(input: SpinFormInput): {
     errors.lookingForDesign = "Please select an option.";
   }
 
+  const referralPartnership = (input.referralPartnership ?? "").trim();
+  if (referralPartnership !== "yes" && referralPartnership !== "no") {
+    errors.referralPartnership = "Please select an option.";
+  }
+
   const valid = Object.keys(errors).length === 0;
 
   return {
@@ -120,6 +128,7 @@ export function validateSpinInput(input: SpinFormInput): {
           customerType: customerType as CustomerType,
           website: website || undefined,
           lookingForDesign: lookingForDesign as YesNo,
+          referralPartnership: referralPartnership as YesNo,
         }
       : undefined,
   };

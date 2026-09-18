@@ -3,7 +3,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { Participant } from "@/lib/models/Participant";
 import { PrizeInventory } from "@/lib/models/PrizeInventory";
 import { isAuthenticatedRequest } from "@/lib/adminAuth";
-import { PRIZE_TYPES, TOTAL_CAMPAIGN_SPINS } from "@/lib/prizeTypes";
+import { PRIZE_TYPES, PRIZE_LABELS as DEFAULT_PRIZE_LABELS, TOTAL_CAMPAIGN_SPINS } from "@/lib/prizeTypes";
 
 export async function GET(req: NextRequest) {
   if (!isAuthenticatedRequest(req)) {
@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
         prizeType,
         totalQuantity: doc?.totalQuantity ?? 0,
         remainingQuantity: doc?.remainingQuantity ?? 0,
+        label: doc?.label || DEFAULT_PRIZE_LABELS[prizeType],
       };
     });
 

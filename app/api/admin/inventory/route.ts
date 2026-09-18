@@ -3,7 +3,15 @@ import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 import { PrizeInventory } from "@/lib/models/PrizeInventory";
 import { isAuthenticatedRequest } from "@/lib/adminAuth";
-import { PRIZE_TYPES, TOTAL_CAMPAIGN_SPINS, isPrizeType, type PrizeType } from "@/lib/prizeTypes";
+import {
+  PRIZE_TYPES,
+  PRIZE_LABELS as DEFAULT_PRIZE_LABELS,
+  TOTAL_CAMPAIGN_SPINS,
+  isPrizeType,
+  type PrizeType,
+} from "@/lib/prizeTypes";
+
+const MAX_LABEL_LENGTH = 60;
 
 export async function GET(req: NextRequest) {
   if (!isAuthenticatedRequest(req)) {
@@ -18,6 +26,7 @@ export async function GET(req: NextRequest) {
       prizeType,
       totalQuantity: byType.get(prizeType)?.totalQuantity ?? 0,
       remainingQuantity: byType.get(prizeType)?.remainingQuantity ?? 0,
+      label: byType.get(prizeType)?.label || DEFAULT_PRIZE_LABELS[prizeType],
     }));
     return NextResponse.json({ inventory, totalCampaignSpins: TOTAL_CAMPAIGN_SPINS });
   } catch (err) {
@@ -29,6 +38,7 @@ export async function GET(req: NextRequest) {
 interface InventoryUpdate {
   prizeType: PrizeType;
   totalQuantity: number;
+  label: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -50,7 +60,7 @@ export async function POST(req: NextRequest) {
 
   const parsedUpdates: InventoryUpdate[] = [];
   for (const raw of updates) {
-    const u = raw as { prizeType?: unknown; totalQuantity?: unknown };
+    const u = raw as { prizeType?: unknown; totalQuantity?: unknown; label?: unknown };
     if (!isPrizeType(u.prizeType)) {
       return NextResponse.json({ message: "Invalid prize type in update." }, { status: 422 });
     }
@@ -61,7 +71,19 @@ export async function POST(req: NextRequest) {
         { status: 422 }
       );
     }
-    parsedUpdates.push({ prizeType: u.prizeType, totalQuantity: qty });
+
+    const label = typeof u.label === "string" ? u.label.trim() : "";
+    if (!label) {
+      return NextResponse.json({ message: "Prize name cannot be empty." }, { status: 422 });
+    }
+    if (label.length > MAX_LABEL_LENGTH) {
+      return NextResponse.json(
+        { message: `Prize name must be ${MAX_LABEL_LENGTH} characters or fewer.` },
+        { status: 422 }
+      );
+    }
+
+    parsedUpdates.push({ prizeType: u.prizeType, totalQuantity: qty, label });
   }
 
   const session = await mongoose.startSession();
@@ -74,6 +96,7 @@ export async function POST(req: NextRequest) {
       const byType = new Map(docs.map((d) => [d.prizeType, d]));
 
       const updateMap = new Map(parsedUpdates.map((u) => [u.prizeType, u.totalQuantity]));
+      const labelMap = new Map(parsedUpdates.map((u) => [u.prizeType, u.label]));
 
       const nextTotals = PRIZE_TYPES.map((prizeType) => {
         const doc = byType.get(prizeType);
@@ -81,7 +104,8 @@ export async function POST(req: NextRequest) {
         const currentRemaining = doc?.remainingQuantity ?? 0;
         const consumed = currentTotal - currentRemaining;
         const nextTotal = updateMap.has(prizeType) ? (updateMap.get(prizeType) as number) : currentTotal;
-        return { prizeType, nextTotal, consumed };
+        const nextLabel = labelMap.has(prizeType) ? (labelMap.get(prizeType) as string) : doc?.label;
+        return { prizeType, nextTotal, consumed, nextLabel };
       });
 
       const grandTotal = nextTotals.reduce((sum, t) => sum + t.nextTotal, 0);
@@ -108,6 +132,7 @@ export async function POST(req: NextRequest) {
             $set: {
               totalQuantity: t.nextTotal,
               remainingQuantity: t.nextTotal - t.consumed,
+              ...(t.nextLabel ? { label: t.nextLabel } : {}),
             },
           },
           { session, upsert: true }

@@ -8,6 +8,7 @@ export interface ParticipantDocument extends Document {
   customerType: "individual" | "business";
   website?: string;
   lookingForDesign: "yes" | "no";
+  referralPartnership: "yes" | "no";
   prize: PrizeType;
   couponCode?: string;
   createdAt: Date;
@@ -22,6 +23,7 @@ const ParticipantSchema = new Schema<ParticipantDocument>(
     customerType: { type: String, required: true, enum: ["individual", "business"] },
     website: { type: String, trim: true },
     lookingForDesign: { type: String, required: true, enum: ["yes", "no"] },
+    referralPartnership: { type: String, required: true, enum: ["yes", "no"] },
     prize: { type: String, required: true, enum: PRIZE_TYPES },
     couponCode: { type: String, trim: true },
   },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { PRIZE_LABELS, type PrizeType } from "@/lib/prizeTypes";
+import { type PrizeType } from "@/lib/prizeTypes";
 
 interface WheelSegment {
   prize: PrizeType;
@@ -33,6 +33,7 @@ const REDUCED_MOTION_DURATION_MS = 500;
 
 interface PrizeWheelProps {
   targetPrize: PrizeType;
+  targetPrizeLabel: string;
   onSettled: () => void;
 }
 
@@ -48,7 +49,7 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
-export default function PrizeWheel({ targetPrize, onSettled }: PrizeWheelProps) {
+export default function PrizeWheel({ targetPrize, targetPrizeLabel, onSettled }: PrizeWheelProps) {
   const reducedMotion = usePrefersReducedMotion();
   const [rotation, setRotation] = useState(0);
   const [settled, setSettled] = useState(false);
@@ -84,7 +85,7 @@ export default function PrizeWheel({ targetPrize, onSettled }: PrizeWheelProps) 
         className="relative aspect-square w-full max-w-[320px] sm:max-w-[380px]"
         role="status"
         aria-live="polite"
-        aria-label={settled ? `Wheel landed on ${PRIZE_LABELS[targetPrize]}` : "Spinning the prize wheel"}
+        aria-label={settled ? `Wheel landed on ${targetPrizeLabel}` : "Spinning the prize wheel"}
       >
         <div
           className={`pointer-events-none absolute inset-[-14px] rounded-full bg-gold-400/25 blur-2xl transition-opacity duration-700 ${

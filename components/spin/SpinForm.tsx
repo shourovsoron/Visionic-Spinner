@@ -23,6 +23,7 @@ const initialForm: SpinFormInput = {
   customerType: "",
   website: "",
   lookingForDesign: "",
+  referralPartnership: "",
 };
 
 export default function SpinForm({ onSuccess, onAlreadyParticipated, onExhausted }: SpinFormProps) {
@@ -50,6 +51,7 @@ export default function SpinForm({ onSuccess, onAlreadyParticipated, onExhausted
       customerType: true,
       website: true,
       lookingForDesign: true,
+      referralPartnership: true,
     });
 
     if (!valid || submitting) return;
@@ -198,6 +200,22 @@ export default function SpinForm({ onSuccess, onAlreadyParticipated, onExhausted
             { value: "no", label: "No" },
           ]}
           error={fieldError("lookingForDesign")}
+        />
+
+        <FieldsetChoice
+          legend="Interested to explore earning opportunities through referral or partnership programs?"
+          name="referralPartnership"
+          required
+          value={form.referralPartnership}
+          onChange={(v) => {
+            setForm((f) => ({ ...f, referralPartnership: v }));
+            markTouched("referralPartnership");
+          }}
+          options={[
+            { value: "yes", label: "Yes" },
+            { value: "no", label: "No" },
+          ]}
+          error={fieldError("referralPartnership")}
         />
       </div>
 
